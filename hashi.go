@@ -14,6 +14,11 @@ import (
 	"regexp"
 )
 
+type TerraformProvider struct {
+	Name    string
+	Version string
+}
+
 var baseUrl string
 
 func discoverLockFile() (string, error) {
@@ -30,8 +35,8 @@ func discoverLockFile() (string, error) {
 	return "", errors.New("could not find a lock file")
 }
 
-func getProvidersFromLockFile(filePath string) []string {
-	providers := make([]string, 0)
+func getProvidersFromLockFile(filePath string) []TerraformProvider {
+	providers := make([]TerraformProvider, 0)
 	file, err := os.Open(filePath)
 	if err != nil {
 		log.Fatal(err)
@@ -43,11 +48,26 @@ func getProvidersFromLockFile(filePath string) []string {
 		log.Fatal(err)
 	}
 
-	for scanner.Scan() {
-		if r.MatchString(scanner.Text()) {
-			providers = append(providers, r.FindStringSubmatch(scanner.Text())[1])
-		}
+	r2, err := regexp.Compile("version\\s*=\\s*\"(.*)\"")
+	if err != nil {
+		log.Fatal(err)
 	}
+
+	provider := ""
+
+	for scanner.Scan() {
+		if provider == "" && r.MatchString(scanner.Text()) {
+			provider = r.FindStringSubmatch(scanner.Text())[1]
+		} else if provider != "" && r2.MatchString(scanner.Text()) {
+			providers = append(providers, TerraformProvider{
+				Name:    provider,
+				Version: r2.FindStringSubmatch(scanner.Text())[1],
+			})
+			provider = ""
+		}
+
+	}
+
 	return providers
 }
 
