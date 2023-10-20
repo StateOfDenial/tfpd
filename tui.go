@@ -149,7 +149,7 @@ func (ff FuzzyFinder) listen() int {
 }
 
 func (ff *FuzzyFinder) selectItem() (int, error) {
-	return ff.FilteredList[ff.Renderer.Sections[listPos].EndY-ff.Renderer.Sections[listPos].Cursor.YLoc].Id, nil
+	return ff.FilteredList[ff.Renderer.Sections[listPos].EndY-ff.Renderer.Sections[listPos].Cursor.YLoc-1].Id, nil
 }
 
 func (ff *FuzzyFinder) filterList() {
