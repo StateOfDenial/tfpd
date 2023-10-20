@@ -1,4 +1,4 @@
-module main
+module github.com/StateOfDenial/tfpd
 
 go 1.21.0
 
