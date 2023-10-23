@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 )
@@ -21,35 +22,48 @@ func promptForInput(prompt string) string {
 	return ret
 }
 
-func main() {
-	baseUrl = "http://registry.terraform.io/v2/"
+func processLockFile() ([]TerraformProvider, error) {
+	var lockProviders []TerraformProvider
 	lockFile, err := discoverLockFile()
-	var providerName, providerVersion string
-	var ff FuzzyFinder
 	if err != nil {
-		// Fall back to prompting for provider
+		return lockProviders, errors.New("Could not find a lock file")
+	}
+	lockProviders = getProvidersFromLockFile(lockFile)
+	if len(lockProviders) == 0 {
+		return lockProviders, errors.New("Found no searchable providers in lock file")
+	}
+	return lockProviders, nil
+}
+
+func processProviders(providers []TerraformProvider) (string, string, error) {
+	switch {
+	case len(providers) > 1:
+		provs := make([]string, len(providers))
+		for i := range providers {
+			provs[i] = providers[i].Name + " : " + providers[i].Version
+		}
+		ff := NewFuzzyFinder()
+		ff.SetFuzzyItems(provs)
+		providerIdx := ff.FuzzyFind()
+		return providers[providerIdx].Name, providers[providerIdx].Version, nil
+	case len(providers) == 1:
+		return providers[0].Name, providers[0].Version, nil
+	default:
+		return "", "", errors.New("No providers list to process")
+	}
+}
+
+func main() {
+	var providerName, providerVersion string
+	baseUrl = "http://registry.terraform.io/v2/"
+	providers, err := processLockFile()
+	if err != nil {
+		fmt.Println()
 		providerName = promptForInput("Enter in a provider to look for: e.g. 'hashicorp/google'")
 	} else {
-		lockProviders := getProvidersFromLockFile(lockFile)
-
-		providers := make([]string, len(lockProviders))
-		for i := range lockProviders {
-			providers[i] = lockProviders[i].Name + " : " + lockProviders[i].Version
-		}
-		var providerIdx int
-		switch {
-		case len(providers) > 1:
-			ff = NewFuzzyFinder()
-			ff.SetFuzzyItems(providers)
-			providerIdx = ff.FuzzyFind()
-			providerName = lockProviders[providerIdx].Name
-			providerVersion = lockProviders[providerIdx].Version
-		case len(providers) == 1:
-			providerIdx = 0
-			providerName = lockProviders[providerIdx].Name
-			providerVersion = lockProviders[providerIdx].Version
-		default:
-			providerName = promptForInput("Enter in a provider to look for: e.g. 'hashicorp/google'")
+		providerName, providerVersion, err = processProviders(providers)
+		if err != nil {
+			panic("tried to process 0 providers from lock file, shouldn't happen")
 		}
 	}
 
@@ -60,7 +74,7 @@ func main() {
 		for i := range versions.Included {
 			vers[i] = versions.Included[i].String()
 		}
-		ff = NewFuzzyFinder()
+		ff := NewFuzzyFinder()
 		ff.SetFuzzyItems(vers)
 		versionIdx := ff.FuzzyFind()
 		providerVersionResources = getProviderVersionResources(versions.Included[versionIdx].Id)
@@ -74,7 +88,7 @@ func main() {
 	for i := range providerVersionResources.Included {
 		resources[i] = providerVersionResources.Included[i].String()
 	}
-	ff = NewFuzzyFinder()
+	ff := NewFuzzyFinder()
 	ff.SetFuzzyItems(resources)
 	resourceIdx := ff.FuzzyFind()
 
