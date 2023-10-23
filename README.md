@@ -25,8 +25,8 @@ veterans.
 ## TODO
 - [x] Auto get provider version from `.terraform.lock.hcl`
 - [x] Support `go install`
-- [ ] Prompt for provider to search for if none found
-- [ ] Provide input arguments to shortcut steps
+- [x] Prompt for provider to search for if none found
+- [ ] Provide input arguments to shortcut steps (like a proper CLI)
 - [ ] Make TUI prettier
 - [ ] Implement some testing
 

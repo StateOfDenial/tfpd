@@ -14,35 +14,43 @@ func filter[T any](ss []T, test func(T) bool) (ret []T) {
 	return ret
 }
 
+func promptForInput(prompt string) string {
+	var ret string
+	fmt.Println(prompt)
+	fmt.Scanln(&ret)
+	return ret
+}
+
 func main() {
 	baseUrl = "http://registry.terraform.io/v2/"
 	lockFile, err := discoverLockFile()
-	if err != nil {
-		panic(err)
-	}
-	lockProviders := getProvidersFromLockFile(lockFile)
-
-	providers := make([]string, len(lockProviders))
-	for i := range lockProviders {
-		providers[i] = lockProviders[i].Name + " : " + lockProviders[i].Version
-	}
-	var providerIdx int
-	var ff FuzzyFinder
 	var providerName, providerVersion string
-	switch {
-	case len(providers) > 1:
-		ff = NewFuzzyFinder()
-		ff.SetFuzzyItems(providers)
-		providerIdx = ff.FuzzyFind()
-		providerName = lockProviders[providerIdx].Name
-		providerVersion = lockProviders[providerIdx].Version
-	case len(providers) == 1:
-		providerIdx = 0
-		providerName = lockProviders[providerIdx].Name
-		providerVersion = lockProviders[providerIdx].Version
-	default:
-		providerIdx = 0
-		fmt.Println("need to prompt for provider input here")
+	var ff FuzzyFinder
+	if err != nil {
+		// Fall back to prompting for provider
+		providerName = promptForInput("Enter in a provider to look for: e.g. 'hashicorp/google'")
+	} else {
+		lockProviders := getProvidersFromLockFile(lockFile)
+
+		providers := make([]string, len(lockProviders))
+		for i := range lockProviders {
+			providers[i] = lockProviders[i].Name + " : " + lockProviders[i].Version
+		}
+		var providerIdx int
+		switch {
+		case len(providers) > 1:
+			ff = NewFuzzyFinder()
+			ff.SetFuzzyItems(providers)
+			providerIdx = ff.FuzzyFind()
+			providerName = lockProviders[providerIdx].Name
+			providerVersion = lockProviders[providerIdx].Version
+		case len(providers) == 1:
+			providerIdx = 0
+			providerName = lockProviders[providerIdx].Name
+			providerVersion = lockProviders[providerIdx].Version
+		default:
+			providerName = promptForInput("Enter in a provider to look for: e.g. 'hashicorp/google'")
+		}
 	}
 
 	versions := getProviderVersions(providerName)
