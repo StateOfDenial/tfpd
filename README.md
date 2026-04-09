@@ -23,12 +23,16 @@ Also since I'm still learning, pretty sure the code will be very painful to
 veterans.
 
 ## TODO
+
 - [x] Auto get provider version from `.terraform.lock.hcl`
 - [x] Support `go install`
 - [x] Prompt for provider to search for if none found
 - [ ] Provide input arguments to shortcut steps (like a proper CLI)
 - [ ] Make TUI prettier
 - [ ] Implement some testing
+- [ ] Get documentation from modules
+- [ ] LSP interface
 
 ## Contributions
+
 Not going to look at contributions at this point, but feel free to fork it!
