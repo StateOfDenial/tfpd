@@ -34,17 +34,30 @@ func listSectionDimensions(w, h int) (int, int, int, int) {
 	return 0, 0, w, h - 3
 }
 
-func newTextSection(w, h int) Section {
+func newTextSection(w, h int) *Section {
 	sx, sy, ex, ey := textSectionDimensions(w, h)
-	s := NewSection(sx, sy, ex, ey)
+	s := NewSection().
+		SetStartX(sx).
+		SetEndX(ex).
+		SetStartY(sy).
+		SetEndY(sy)
+
 	s.SetCursor(sx+5, ey-1, Typing)
+	s.Cursor.SetCursorXBoundary(sx+5, ex-5)
+	s.Cursor.SetCursorYBoundary(ey-1, ey-1)
 	return s
 }
 
-func newListSection(w, h int) Section {
+func newListSection(w, h int) *Section {
 	sx, sy, ex, ey := listSectionDimensions(w, h)
-	s := NewSection(sx, sy, ex, ey)
+	s := NewSection().
+		SetStartX(sx).
+		SetEndX(ex).
+		SetStartY(sy).
+		SetEndY(sy)
 	s.SetCursor(sx+2, ey-1, Selection)
+	s.Cursor.SetCursorXBoundary(sx+2, sx+2)
+	s.Cursor.SetCursorYBoundary(sy+1, ey-1)
 	return s
 }
 
@@ -54,8 +67,8 @@ func NewFuzzyFinder() FuzzyFinder {
 	textbox := newTextSection(x, y)
 	textbox.Content = append(textbox.Content, []rune{'>', ' '})
 	list := newListSection(x, y)
-	r.AddSection(textboxPos, textbox).
-		AddSection(listPos, list)
+	r.AddSection(textboxPos, *textbox).
+		AddSection(listPos, *list)
 	return FuzzyFinder{
 		Renderer:  r,
 		SearchPos: 0,
@@ -77,7 +90,12 @@ func (ff *FuzzyFinder) SetFuzzyItems(in []string) *FuzzyFinder {
 	return ff
 }
 
-func (ff FuzzyFinder) FuzzyFind() int {
+func (ff *FuzzyFinder) FuzzyFindWithInput(initSearch string) int {
+	ff.SearchInput = []rune(initSearch)
+	return ff.FuzzyFind()
+}
+
+func (ff *FuzzyFinder) FuzzyFind() int {
 	ff.recalcList()
 	ff.setListContent()
 	ff.Draw()
@@ -106,6 +124,8 @@ func (ff FuzzyFinder) listen() int {
 
 			//Exit keys
 			case tcell.KeyEscape:
+				ff.Renderer.Screen.Fini()
+				os.Exit(0)
 			case tcell.KeyCtrlC:
 				ff.Renderer.Screen.Fini()
 				os.Exit(0)
@@ -192,15 +212,11 @@ func (ff *FuzzyFinder) setTextBoxContent() {
 }
 
 func (ff *FuzzyFinder) moveBottomPromptRight() {
-	if ff.Renderer.Sections[textboxPos].Cursor.XLoc < 5+len(ff.SearchInput) {
-		ff.Renderer.Sections[textboxPos].MoveCursorRight(1)
-	}
+	ff.Renderer.Sections[textboxPos].MoveCursorRight(1)
 }
 
 func (ff *FuzzyFinder) moveBottomPromptLeft() {
-	if ff.Renderer.Sections[textboxPos].Cursor.XLoc > 5 {
-		ff.Renderer.Sections[textboxPos].MoveCursorLeft(1)
-	}
+	ff.Renderer.Sections[textboxPos].MoveCursorLeft(1)
 }
 
 func (ff *FuzzyFinder) moveTopPromptUp() {

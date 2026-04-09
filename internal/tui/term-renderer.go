@@ -20,6 +20,10 @@ type SectionCursor struct {
 	XLoc int
 	YLoc int
 	Type CursorType
+	MinX int
+	MaxX int
+	MinY int
+	MaxY int
 }
 
 type Section struct {
@@ -46,13 +50,40 @@ func NewCursor(x, y int, t CursorType) SectionCursor {
 	}
 }
 
-func NewSection(startx, starty, endx, endy int) Section {
-	return Section{
-		StartX: startx,
-		StartY: starty,
-		EndX:   endx,
-		EndY:   endy,
-	}
+func (c *SectionCursor) SetCursorXBoundary(start, end int) *SectionCursor {
+	c.MinX = start
+	c.MaxX = end
+	return c
+}
+
+func (c *SectionCursor) SetCursorYBoundary(start, end int) *SectionCursor {
+	c.MinY = start
+	c.MaxY = end
+	return c
+}
+
+func NewSection() *Section {
+	return &Section{}
+}
+
+func (s *Section) SetStartX(startx int) *Section {
+	s.StartX = startx
+	return s
+}
+
+func (s *Section) SetEndX(endx int) *Section {
+	s.EndX = endx
+	return s
+}
+
+func (s *Section) SetStartY(starty int) *Section {
+	s.StartY = starty
+	return s
+}
+
+func (s *Section) SetEndY(endy int) *Section {
+	s.EndY = endy
+	return s
 }
 
 func (s *Section) AppendLineContent(c []rune) {
@@ -110,40 +141,40 @@ func (s Section) Draw(screen tcell.Screen) {
 
 func (s *Section) MoveCursorUp(m int) {
 	if s.Cursor != (SectionCursor{}) {
-		if s.Cursor.YLoc-m > s.StartY {
+		if s.Cursor.YLoc-m > s.Cursor.MinY {
 			s.Cursor.YLoc -= m
 		} else {
-			s.Cursor.YLoc = 1
+			s.Cursor.YLoc = s.Cursor.MinY
 		}
 	}
 }
 
 func (s *Section) MoveCursorDown(m int) {
 	if s.Cursor != (SectionCursor{}) {
-		if s.Cursor.YLoc+m < s.EndY {
+		if s.Cursor.YLoc+m < s.Cursor.MaxY {
 			s.Cursor.YLoc += m
 		} else {
-			s.Cursor.YLoc = s.EndY - 1
+			s.Cursor.YLoc = s.Cursor.MaxY
 		}
 	}
 }
 
 func (s *Section) MoveCursorRight(m int) {
 	if s.Cursor != (SectionCursor{}) {
-		if s.Cursor.XLoc+m < s.EndX {
+		if s.Cursor.XLoc+m < s.Cursor.MaxX {
 			s.Cursor.XLoc += m
 		} else {
-			s.Cursor.XLoc = s.EndX - 1
+			s.Cursor.XLoc = s.Cursor.MaxX
 		}
 	}
 }
 
 func (s *Section) MoveCursorLeft(m int) {
 	if s.Cursor != (SectionCursor{}) {
-		if s.Cursor.XLoc-m > 0 {
+		if s.Cursor.XLoc-m > s.Cursor.MinX {
 			s.Cursor.XLoc -= m
 		} else {
-			s.Cursor.XLoc = 0
+			s.Cursor.XLoc = s.Cursor.MinX
 		}
 	}
 }
