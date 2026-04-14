@@ -7,7 +7,24 @@ import (
 )
 
 func flags() []cli.Flag {
-	return []cli.Flag{}
+	return []cli.Flag{
+		&cli.StringFlag{
+			Name:  "provider",
+			Usage: "a provider to search",
+		},
+		&cli.StringFlag{
+			Name:  "version",
+			Usage: "what version of the provide to search",
+		},
+		&cli.BoolFlag{
+			Name:  "data",
+			Usage: "whether to search for a data resource instead",
+		},
+		&cli.StringFlag{
+			Name:  "resource",
+			Usage: "terraform resource name to search for",
+		},
+	}
 }
 
 func Command() *cli.Command {
@@ -17,10 +34,15 @@ func Command() *cli.Command {
 		Flags: flags(),
 		Commands: []*cli.Command{
 			{
-				Name:  "get-resource-doc",
+				Name:  "get-doc",
 				Usage: "gets documentation for a specific resource",
-				Action: func(ctx context.Context, c *cli.Command) error {
-					command()
+				Action: func(ctx context.Context, cmd *cli.Command) error {
+					provider := cmd.String("provider")
+					version := cmd.String("version")
+					isData := cmd.Bool("data")
+					resource := cmd.String("resource")
+
+					command(provider, version, resource, isData)
 					return nil
 				},
 			},

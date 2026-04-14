@@ -38,7 +38,7 @@ func processLockFile() ([]h.TerraformProvider, error) {
 	return lockProviders, nil
 }
 
-func processProviders(providers []h.TerraformProvider) (string, string, error) {
+func processProviders(providers []h.TerraformProvider, initProvider string) (string, string, error) {
 	switch {
 	case len(providers) > 1:
 		provs := make([]string, len(providers))
@@ -47,7 +47,7 @@ func processProviders(providers []h.TerraformProvider) (string, string, error) {
 		}
 		ff := tui.NewFuzzyFinder()
 		ff.SetFuzzyItems(provs)
-		providerIdx := ff.FuzzyFind()
+		providerIdx := ff.FuzzyFindWithInput(initProvider)
 		return providers[providerIdx].Name, providers[providerIdx].Version, nil
 	case len(providers) == 1:
 		return providers[0].Name, providers[0].Version, nil
@@ -56,15 +56,19 @@ func processProviders(providers []h.TerraformProvider) (string, string, error) {
 	}
 }
 
-func command() {
+func command(provider, version, resource string, isData bool) error {
 	var providerName, providerVersion string
 	hashiClient := h.NewClient().SetBaseUrl("http://registry.terraform.io/v2/")
 	providers, err := processLockFile()
 	if err != nil {
-		fmt.Println()
-		providerName = promptForInput("Enter in a provider to look for: e.g. 'hashicorp/google'")
+		if provider == "" {
+			fmt.Println()
+			providerName = promptForInput("Enter in a provider to look for: e.g. 'hashicorp/google'")
+		} else {
+			providerName = provider
+		}
 	} else {
-		providerName, providerVersion, err = processProviders(providers)
+		providerName, providerVersion, err = processProviders(providers, provider)
 		if err != nil {
 			panic("tried to process 0 providers from lock file, shouldn't happen")
 		}
@@ -79,7 +83,7 @@ func command() {
 		}
 		ff := tui.NewFuzzyFinder()
 		ff.SetFuzzyItems(vers)
-		versionIdx := ff.FuzzyFind()
+		versionIdx := ff.FuzzyFindWithInput(version)
 		providerVersionResources = hashiClient.GetProviderVersionResources(versions.Included[versionIdx].Id)
 	} else {
 		filterTest := func(v h.Version) bool { return v.Attributes.Version == providerVersion }
@@ -93,7 +97,12 @@ func command() {
 	}
 	ff := tui.NewFuzzyFinder()
 	ff.SetFuzzyItems(resources)
-	resourceIdx := ff.FuzzyFind()
+	var resourceIdx int
+	if isData {
+		resourceIdx = ff.FuzzyFindWithInput("data-sources: " + resource)
+	} else {
+		resourceIdx = ff.FuzzyFindWithInput(resource)
+	}
 
 	fmt.Fprint(os.Stdout, hashiClient.GetResourceDoc(providerVersionResources.Included[resourceIdx].Id))
 }
