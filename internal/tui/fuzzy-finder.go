@@ -92,17 +92,23 @@ func (ff *FuzzyFinder) SetFuzzyItems(in []string) *FuzzyFinder {
 
 func (ff *FuzzyFinder) FuzzyFindWithInput(initSearch string) int {
 	ff.SearchInput = []rune(initSearch)
+	ff.setTextBoxContent()
+	ff.recalcList()
+	if len(ff.FilteredList) == 1 {
+		ff.Renderer.Screen.Fini()
+		return ff.FilteredList[0].Id
+	}
 	return ff.FuzzyFind()
 }
 
 func (ff *FuzzyFinder) FuzzyFind() int {
 	ff.recalcList()
 	ff.setListContent()
-	ff.Draw()
+	ff.draw()
 	return ff.listen()
 }
 
-func (ff FuzzyFinder) Draw() {
+func (ff FuzzyFinder) draw() {
 	ff.Renderer.Draw()
 }
 
@@ -114,11 +120,11 @@ func (ff FuzzyFinder) recalc() {
 
 func (ff FuzzyFinder) listen() int {
 	for {
-		ff.Renderer.Screen.Show()
+		ff.draw()
 		switch ev := ff.Renderer.Screen.PollEvent().(type) {
 		case *tcell.EventResize:
 			ff.recalc()
-			ff.Draw()
+			ff.draw()
 		case *tcell.EventKey:
 			switch ev.Key() {
 
@@ -163,7 +169,7 @@ func (ff FuzzyFinder) listen() int {
 				return item
 			}
 			ff.recalc()
-			ff.Draw()
+			ff.draw()
 		}
 	}
 }

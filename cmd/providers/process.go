@@ -3,7 +3,7 @@ package providers
 import (
 	"errors"
 	"fmt"
-	"os"
+	// "os"
 
 	h "github.com/StateOfDenial/tfpd/internal/hashicorp"
 	"github.com/StateOfDenial/tfpd/internal/tui"
@@ -104,5 +104,7 @@ func command(provider, version, resource string, isData bool) error {
 		resourceIdx = ff.FuzzyFindWithInput(resource)
 	}
 
-	fmt.Fprint(os.Stdout, hashiClient.GetResourceDoc(providerVersionResources.Included[resourceIdx].Id))
+	m := tui.NewMDViewer(hashiClient.GetResourceDoc(providerVersionResources.Included[resourceIdx].Id))
+	m.Display()
+	return nil
 }
