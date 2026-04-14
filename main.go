@@ -11,8 +11,8 @@ import (
 
 func main() {
 	app := &cli.Command{
-		Name:  "tf-state-server",
-		Usage: "Terraform HTTP state server",
+		Name:  "tfpd",
+		Usage: "Terraform provider docs getter",
 		Commands: []*cli.Command{
 			providers.Command(),
 		},
